@@ -15,7 +15,7 @@
 		justify-content: center;
 		align-items: center;
 		flex-direction: column;
-		padding: 80px;
+		padding: 50px;
 		box-sizing: border-box;
 		text-align: center;
 		gap: 20px;

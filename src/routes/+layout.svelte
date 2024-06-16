@@ -1,6 +1,7 @@
 <script>
 	import Background from '$lib/Background.svelte';
 	import Help from '$lib/Help.svelte';
+	import { inject } from '@vercel/analytics'
 </script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
