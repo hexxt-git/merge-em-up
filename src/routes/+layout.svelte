@@ -2,6 +2,7 @@
 	import Background from '$lib/Background.svelte';
 	import Help from '$lib/Help.svelte';
 	import { inject } from '@vercel/analytics'
+	inject()
 </script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
