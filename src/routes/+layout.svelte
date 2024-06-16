@@ -1,5 +1,6 @@
 <script>
 	import Background from '$lib/Background.svelte';
+	import Help from '$lib/Help.svelte';
 </script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -11,6 +12,7 @@
 
 <Background />
 <slot />
+<Help />
 
 <style>
 	:global(body) {

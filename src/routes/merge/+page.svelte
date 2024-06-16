@@ -10,7 +10,7 @@
 			position: { x: 300, y: 250 },
 			held: false,
 			status: 'free',
-			id: 1,
+			id: Math.random(),
 		},
 		{
 			name: 'fire',
@@ -18,7 +18,7 @@
 			position: { x: 400, y: 500 },
 			held: false,
 			status: 'free',
-			id: 2,
+			id: Math.random(),
 		},
 		{
 			name: 'water',
@@ -26,14 +26,41 @@
 			position: { x: 400, y: 550 },
 			held: false,
 			status: 'free',
-			id: 3,
+			id: Math.random(),
 		},
 	]);
 
 	initSimulation(items);
+	let textInput: HTMLInputElement;
+	let processing = false;
 </script>
 
 <main>
+	<form
+		on:submit={async () => {
+			if(processing) return;
+			processing = true
+			let word = textInput.value
+			let emoji_res = await fetch(`/api/emoji?word=${word}`);
+			let emoji_data = await emoji_res.json();
+			let emoji = emoji_data.emoji;
+			$items.push({
+				name: word,
+				icon: emoji,
+				position: {
+					x: window.innerWidth / 2 + Math.random() * 300 - 150,
+					y: window.innerHeight / 2 + Math.random() * 300 - 150,
+				},
+				held: false,
+				status: 'free',
+				id: Math.random(),
+			});
+			if(textInput.value == word) textInput.value = '';
+			processing = false
+		}}
+	>
+		<input type="text" placeholder="add a new item" bind:this={textInput} />
+	</form>
 	{#each $items as item (item.id)}
 		<!-- svelte-ignore a11y-no-static-element-interactions -->
 		<div
@@ -62,6 +89,23 @@
 		width: 100%;
 		height: 100vh;
 		position: relative;
+		overflow: hidden;
+	}
+	input {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		margin: 20px auto;
+		width: 400px;
+		max-width: 60vw;
+		border: solid 1px #333;
+		padding: 10px 20px 10px 20px;
+		border-radius: 30px;
+		font-size: 20px;
+	}
+	input:focus {
+		outline: none;
 	}
 	.item {
 		position: absolute;
@@ -81,7 +125,6 @@
 		gap: 15px;
 		align-items: center;
 		transform: translate(-50%, -50%) translateZ(0);
-		transition: top left 100ms linear;
 		outline-style: solid;
 		outline-color: #1b9753;
 		outline-width: 0;

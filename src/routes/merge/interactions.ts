@@ -9,28 +9,34 @@ import {
 } from '$lib/types';
 import type { Writable } from 'svelte/store';
 
-const merge_queue: any = {};
+const merge_queue: Map<number, { icon: string; name: string }> = new Map();
 
 async function merge(name1: string, name2: string, id: number) {
-	setTimeout(() => {
-		merge_queue[id] = {
-			icon: '🗿',
-			name: name1 + name2,
-		};
-	}, 1500);
+	const res = await fetch(`/api/merge?name1=${name1}&name2=${name2}`)
+	const data: { name: string, icon: string } = await res.json()
+	merge_queue.set(id, data)
 }
 
 function update(items: Item[]) {
 	items.forEach((item) => {
-		if (merge_queue[item.id]) {
+		if (merge_queue.has(item.id)) {
+			const mergeItem = merge_queue.get(item.id)!;
 			item.status = 'free';
-			item.name = merge_queue[item.id].name;
-			item.icon = merge_queue[item.id].icon;
-			merge_queue[item.id] = null;
+			item.name = mergeItem.name;
+			item.icon = mergeItem.icon;
+			merge_queue.delete(item.id);
 		}
 	});
 
 	items.forEach((item: Item) => {
+		item.position.x = Math.max(
+			60,
+			Math.min(item.position.x, window.innerWidth - 60)
+		);
+		item.position.y = Math.max(
+			20,
+			Math.min(item.position.y, window.innerHeight - 20)
+		);
 		if (item.held || item.status == 'delete') return;
 		items.forEach((other) => {
 			if (item.id == other.id || other.status == 'delete') return;
@@ -38,7 +44,9 @@ function update(items: Item[]) {
 			const dir: Vector2 = vectorNormalize(dif);
 			const dist: number = vectorMagnitude(dif);
 			let force: number = 100 / (dist ** 1.2 + 20);
-			if (other.held) force *= -0.3;
+			if (other.held){
+				force = - 150 / (dist + 70)
+			}
 			else if (dist > 400) force = 0;
 			item.position = vectorAdd(
 				item.position,
@@ -46,7 +54,8 @@ function update(items: Item[]) {
 			);
 			if (
 				dist < 20 &&
-				item.name != other.name && // HACK so it doesnt merge when duplicating
+                // HACK so it doesnt merge when duplicating
+				item.name != other.name &&
 				other.status != 'merge' &&
 				item.status != 'merge' &&
 				!other.held
@@ -76,6 +85,14 @@ function mouse_interactions(items: Writable<Item[]>) {
 				if (!item.held) return;
 				item.position.x += e.movementX;
 				item.position.y += e.movementY;
+				item.position.x = Math.max(
+					60,
+					Math.min(item.position.x, window.innerWidth - 60)
+				);
+				item.position.y = Math.max(
+					20,
+					Math.min(item.position.y, window.innerHeight - 20)
+				);
 			});
 			return items;
 		});
@@ -87,6 +104,7 @@ function mouse_interactions(items: Writable<Item[]>) {
 }
 
 export function initSimulation(items: Writable<Item[]>) {
+    if(typeof window == 'undefined') return;
 	mouse_interactions(items);
 	update_loop(items);
 }

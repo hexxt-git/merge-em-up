@@ -40,7 +40,7 @@
 
 		const mousemoveListener = (event: MouseEvent) => {
 			if (!mouse) return;
-			if (frame % 5 != 0) return
+			if (frame % 8 != 0) return
 			dots.push({
 				x: event.x,
 				y: event.y,
