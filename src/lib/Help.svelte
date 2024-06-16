@@ -12,13 +12,18 @@
 	<div
 		id="help-page"
 		on:click={(e) => {
-            //@ts-ignore
+			//@ts-ignore
 			if (e.target.id == 'help-page') state = 'hidden';
 		}}
 	>
 		<div id="help-content">
 			<h1>help page</h1>
-			<p>it's pretty obvious. play around and you'll figure it out.</p>
+			<p>
+				there is no final goal or target you must achieve. <br />
+				you can merge cards by dragging them on top of each other and
+				duplicate them by double clicking. <br />
+				you can additionally add new cards using the text input above.
+			</p>
 		</div>
 	</div>
 {/if}
@@ -38,10 +43,21 @@
 		align-items: center;
 	}
 	#help-content {
-		background-color: #ffffffb0;
+		background-color: #fffffff0;
 		border: solid #222 1px;
 		border-radius: 20px;
-		padding: 40px 40px 80px 20px;
+		padding: 40px 20px 80px 20px;
+		animation: appear 300ms ease-out;
+		width: 550px;
+		max-width: 80vw;
+	}
+	@keyframes appear {
+		0% {
+			opacity: 0;
+		}
+		100% {
+			opacity: 1;
+		}
 	}
 	h1 {
 		margin: 0 0 10px 0;

@@ -55,7 +55,7 @@
 		window.addEventListener('mouseleave', mouseleaveListener);
 		window.addEventListener('mousemove', mousemoveListener);
 
-		const intervalId = setInterval(update, 1000 / 60);
+		const intervalId = setInterval(update, 1000 / 30);
 
 		return () => {
 			window.removeEventListener('resize', resizeListener);
@@ -70,7 +70,7 @@
 	let frame = 0;
 	function update() {
 		frame += 1;
-		while (dots.length < 40) {
+		while (dots.length < (window.innerHeight * window.innerWidth) / 24000) {
 			dots.push({
 				x: Math.random() * window.innerWidth,
 				y: Math.random() * window.innerHeight,
@@ -78,7 +78,7 @@
 				vy: Math.random() - 0.5,
 			});
 		}
-		if (dots.length < (window.innerHeight * window.innerWidth) / 17000) {
+		if (dots.length < (window.innerHeight * window.innerWidth) / 15000) {
 			dots.push({
 				x: Math.random() * window.innerWidth,
 				y: Math.random() * window.innerHeight,

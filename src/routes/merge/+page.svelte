@@ -2,45 +2,72 @@
 	import { writable, type Writable } from 'svelte/store';
 	import type { Item } from '$lib/types';
 	import { initSimulation, duplicate_item } from './interactions';
+	import { onMount } from 'svelte';
 
-	let items: Writable<Item[]> = writable([
-		{
-			name: 'rock',
-			icon: '🪨',
-			position: { x: 300, y: 250 },
-			held: false,
-			status: 'free',
-			id: Math.random(),
-		},
-		{
-			name: 'fire',
-			icon: '🔥',
-			position: { x: 400, y: 500 },
-			held: false,
-			status: 'free',
-			id: Math.random(),
-		},
-		{
-			name: 'water',
-			icon: '🌊',
-			position: { x: 400, y: 550 },
-			held: false,
-			status: 'free',
-			id: Math.random(),
-		},
-	]);
+	let items: Writable<Item[]> = writable([]);
+	if (typeof window != 'undefined') {
+		items.set([
+			{
+				name: 'rock',
+				icon: '🪨',
+				position: {
+					x: window.innerWidth / 2 + Math.random() * 600 - 300,
+					y: window.innerHeight / 2 + Math.random() * 600 - 300,
+				},
+				held: false,
+				status: 'free',
+				id: Math.random(),
+			},
+			{
+				name: 'fire',
+				icon: '🔥',
+				position: {
+					x: window.innerWidth / 2 + Math.random() * 600 - 300,
+					y: window.innerHeight / 2 + Math.random() * 600 - 300,
+				},
+				held: false,
+				status: 'free',
+				id: Math.random(),
+			},
+			{
+				name: 'water',
+				icon: '🌊',
+				position: {
+					x: window.innerWidth / 2 + Math.random() * 600 - 300,
+					y: window.innerHeight / 2 + Math.random() * 600 - 300,
+				},
+				held: false,
+				status: 'free',
+				id: Math.random(),
+			},
+		]);
+	}
 
 	initSimulation(items);
-	let textInput: HTMLInputElement;
 	let processing = false;
+
+	let textInput: HTMLInputElement;
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.code === 'KeyK' && event.ctrlKey) {
+			event.preventDefault();
+			textInput.focus();
+		}
+	}
+
+	onMount(() => {
+		window.addEventListener('keydown', handleKeydown);
+		return () => {
+			window.removeEventListener('keydown', handleKeydown);
+		};
+	});
 </script>
 
 <main>
 	<form
 		on:submit={async () => {
-			if(processing) return;
-			processing = true
-			let word = textInput.value
+			if (processing) return;
+			processing = true;
+			let word = textInput.value;
 			let emoji_res = await fetch(`/api/emoji?word=${word}`);
 			let emoji_data = await emoji_res.json();
 			let emoji = emoji_data.emoji;
@@ -48,18 +75,25 @@
 				name: word,
 				icon: emoji,
 				position: {
-					x: window.innerWidth / 2 + Math.random() * 300 - 150,
-					y: window.innerHeight / 2 + Math.random() * 300 - 150,
+					x: window.innerWidth / 2 + Math.random() * 600 - 300,
+					y: window.innerHeight / 2 + Math.random() * 600 - 300,
 				},
 				held: false,
 				status: 'free',
 				id: Math.random(),
 			});
-			if(textInput.value == word) textInput.value = '';
-			processing = false
+			if (textInput.value == word) textInput.value = '';
+			processing = false;
 		}}
 	>
 		<input type="text" placeholder="add a new item" bind:this={textInput} />
+		<!-- svelte-ignore a11y-click-events-have-key-events -->
+		<!-- svelte-ignore a11y-no-static-element-interactions -->
+		{#if textInput?.value?.length > 0}
+			<span>Enter</span>
+		{:else}
+			<span on:click={() => textInput.focus()}>ctrl + k</span>
+		{/if}
 	</form>
 	{#each $items as item (item.id)}
 		<!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -72,9 +106,10 @@
             "
 			on:mousedown={() => (item.held = true)}
 			on:mouseup={() => (item.held = false)}
-			on:mouseleave={() => (item.held = false)}
+			on:touchstart={() => (item.held = true)}
+			on:touchend={() => (item.held = false)}
 			on:dblclick={() => duplicate_item(items, item)}
-		>
+			>
 			{#if item.status == 'merge'}
 				<span>🔄</span> loading...
 			{:else}
@@ -91,7 +126,7 @@
 		position: relative;
 		overflow: hidden;
 	}
-	input {
+	form {
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -99,9 +134,26 @@
 		margin: 20px auto;
 		width: 400px;
 		max-width: 60vw;
-		border: solid 1px #333;
-		padding: 10px 20px 10px 20px;
-		border-radius: 30px;
+		border: solid 1px #555;
+		border-radius: 100px;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding-right: 15px;
+	}
+	form span {
+		background-color: #f3f3f3;
+		border-radius: 7px;
+		padding: 3px 10px;
+		cursor: pointer;
+		user-select: none;
+		font-family: sans-serif;
+		color: #222;
+	}
+	input {
+		border: none;
+		background: transparent;
+		padding: 10px 25px;
 		font-size: 20px;
 	}
 	input:focus {

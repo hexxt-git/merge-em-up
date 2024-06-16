@@ -19,18 +19,18 @@ export async function GET({ url }) {
 	const name2 = url.searchParams.get('name2') || 'unknown';
 	const prompt = { name1, name2 };
 
-	let attempts = 0;
+	let attempts = 10;
 	let success = false;
 	let response: string = '{"name": "error", "icon": "⚠️"}';
 	
-	while (attempts < 10 && !success) {
+	while (attempts > 0 && !success) {
 		try {
 			const result = await model.generateContent(JSON.stringify(prompt));
 			response = result.response.text();
 			success = true;
 		} catch (error) {
 			console.log({name1, name2, attempts, error});
-			attempts += 1;
+			attempts -= 1;
 			await new Promise(r => setTimeout(r, 3000))
 		}
 	}

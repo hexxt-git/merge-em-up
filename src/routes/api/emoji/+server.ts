@@ -14,8 +14,21 @@ export async function GET({ url }) {
 	const word = url.searchParams.get('word') || 'error';
 	const prompt = { word };
 
-	const result = await model.generateContent(JSON.stringify(prompt));
-	const response = result.response.text();
+	let attempts = 5;
+	let success = false;
+	let response: string = '⛔';
+	
+	while (attempts > 0 && !success) {
+		try {
+			const result = await model.generateContent(JSON.stringify(prompt));
+			response = result.response.text();
+			success = true;
+		} catch (error) {
+			console.log({word, attempts, error});
+			attempts -= 1;
+			await new Promise(r => setTimeout(r, 2000))
+		}
+	}
 
 	return new Response(response, {
 		headers: { 'Content-Type': 'application/json' },

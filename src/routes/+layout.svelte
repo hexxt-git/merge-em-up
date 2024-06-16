@@ -22,4 +22,7 @@
 			Libre Baskerville,
 			serif;
 	}
+	:global(*)::selection{
+		background-color: #6baff0;
+	}
 </style>

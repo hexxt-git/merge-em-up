@@ -12,9 +12,9 @@ import type { Writable } from 'svelte/store';
 const merge_queue: Map<number, { icon: string; name: string }> = new Map();
 
 async function merge(name1: string, name2: string, id: number) {
-	const res = await fetch(`/api/merge?name1=${name1}&name2=${name2}`)
-	const data: { name: string, icon: string } = await res.json()
-	merge_queue.set(id, data)
+	const res = await fetch(`/api/merge?name1=${name1}&name2=${name2}`);
+	const data: { name: string; icon: string } = await res.json();
+	merge_queue.set(id, data);
 }
 
 function update(items: Item[]) {
@@ -44,17 +44,16 @@ function update(items: Item[]) {
 			const dir: Vector2 = vectorNormalize(dif);
 			const dist: number = vectorMagnitude(dif);
 			let force: number = 100 / (dist ** 1.2 + 20);
-			if (other.held){
-				force = - 150 / (dist + 70)
-			}
-			else if (dist > 400) force = 0;
+			if (other.held) {
+				force = -150 / (dist + 70);
+			} else if (dist > 400) force = 0;
 			item.position = vectorAdd(
 				item.position,
 				vectorMultiply(dir, force)
 			);
 			if (
 				dist < 20 &&
-                // HACK so it doesnt merge when duplicating
+				// HACK so it doesnt merge when duplicating
 				item.name != other.name &&
 				other.status != 'merge' &&
 				item.status != 'merge' &&
@@ -83,28 +82,35 @@ function mouse_interactions(items: Writable<Item[]>) {
 		items.update((items) => {
 			items.forEach((item) => {
 				if (!item.held) return;
-				item.position.x += e.movementX;
-				item.position.y += e.movementY;
-				item.position.x = Math.max(
-					60,
-					Math.min(item.position.x, window.innerWidth - 60)
-				);
-				item.position.y = Math.max(
-					20,
-					Math.min(item.position.y, window.innerHeight - 20)
-				);
+				item.position.x = e.clientX;
+				item.position.y = e.clientY;
+			});
+			return items;
+		});
+	};
+	if (typeof window != 'undefined') {
+		window.addEventListener('mousemove', handle_mousemove);
+	}
+
+	const handle_touchmove = (e: TouchEvent) => {
+		items.update((items) => {
+			items.forEach((item) => {
+				if (!item.held) return;
+				let touch = e.changedTouches[0];
+				item.position.x = touch.clientX;
+				item.position.y = touch.clientY;
 			});
 			return items;
 		});
 	};
 
 	if (typeof window != 'undefined') {
-		window.addEventListener('mousemove', handle_mousemove);
+		window.addEventListener('touchmove', handle_touchmove);
 	}
 }
 
 export function initSimulation(items: Writable<Item[]>) {
-    if(typeof window == 'undefined') return;
+	if (typeof window == 'undefined') return;
 	mouse_interactions(items);
 	update_loop(items);
 }
