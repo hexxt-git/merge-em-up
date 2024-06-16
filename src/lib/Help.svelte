@@ -17,12 +17,12 @@
 		}}
 	>
 		<div id="help-content">
-			<h1>help page</h1>
+			<h1>help:</h1>
 			<p>
 				there is no final goal or target you must achieve. <br />
 				you can merge cards by dragging them on top of each other and
 				duplicate them by double clicking. <br />
-				you can additionally add new cards using the text input above.
+				you can also add new cards using the text input above.
 			</p>
 		</div>
 	</div>
