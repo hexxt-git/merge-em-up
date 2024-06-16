@@ -9,7 +9,27 @@ import {
 } from '$lib/types';
 import type { Writable } from 'svelte/store';
 
+const merge_queue: any = {};
+
+async function merge(name1: string, name2: string, id: number) {
+	setTimeout(() => {
+		merge_queue[id] = {
+			icon: '🗿',
+			name: name1 + name2,
+		};
+	}, 1500);
+}
+
 function update(items: Item[]) {
+	items.forEach((item) => {
+		if (merge_queue[item.id]) {
+			item.status = 'free';
+			item.name = merge_queue[item.id].name;
+			item.icon = merge_queue[item.id].icon;
+			merge_queue[item.id] = null;
+		}
+	});
+
 	items.forEach((item: Item) => {
 		if (item.held || item.status == 'delete') return;
 		items.forEach((other) => {
@@ -19,20 +39,21 @@ function update(items: Item[]) {
 			const dist: number = vectorMagnitude(dif);
 			let force: number = 100 / (dist ** 1.2 + 20);
 			if (other.held) force *= -0.3;
-            else if (dist > 400) force = 0
+			else if (dist > 400) force = 0;
 			item.position = vectorAdd(
 				item.position,
 				vectorMultiply(dir, force)
 			);
 			if (
 				dist < 20 &&
-				item.name != other.name &&
+				item.name != other.name && // HACK so it doesnt merge when duplicating
 				other.status != 'merge' &&
-				item.status != 'merge' && 
-                ! other.held
+				item.status != 'merge' &&
+				!other.held
 			) {
 				item.status = 'delete';
 				other.status = 'merge';
+				merge(item.name, other.name, other.id);
 			}
 		});
 	});
@@ -71,8 +92,8 @@ export function initSimulation(items: Writable<Item[]>) {
 }
 
 export function duplicate_item(items: Writable<Item[]>, item: Item) {
-    if(item.status != 'free') return;
-	const newItem = JSON.parse(JSON.stringify(item)); // js is retarded
+	if (item.status != 'free') return;
+	const newItem = JSON.parse(JSON.stringify(item));
 	newItem.id = Math.random();
 	newItem.position.x += Math.random();
 	newItem.position.y += Math.random();

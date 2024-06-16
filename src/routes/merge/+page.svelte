@@ -65,7 +65,7 @@
 	}
 	.item {
 		position: absolute;
-		background-color: #fffe;
+		background-color: #fff9;
 		color: #222;
 		/* HACK for some reason bluring the backdrop makes the whole element mushy */
 		/* backdrop-filter: blur(3px); */
