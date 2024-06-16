@@ -1,36 +1,36 @@
 <script lang="ts">
 	import { writable, type Writable } from 'svelte/store';
 	import type { Item } from '$lib/types';
-	import { update_loop, duplicate_item } from './interactions';
+	import { initSimulation, duplicate_item } from './interactions';
 
 	let items: Writable<Item[]> = writable([
 		{
 			name: 'rock',
 			icon: '🪨',
 			position: { x: 300, y: 250 },
-			velocity: { x: 1, y: 1 },
 			held: false,
+			status: 'free',
 			id: 1,
 		},
 		{
 			name: 'fire',
 			icon: '🔥',
 			position: { x: 400, y: 500 },
-			velocity: { x: 0, y: 0 },
 			held: false,
+			status: 'free',
 			id: 2,
 		},
 		{
 			name: 'water',
 			icon: '🌊',
-			position: { x: 500, y: 150 },
-			velocity: { x: 0, y: 0 },
+			position: { x: 400, y: 550 },
 			held: false,
+			status: 'free',
 			id: 3,
 		},
 	]);
 
-	update_loop(items);
+	initSimulation(items);
 </script>
 
 <main>
@@ -41,16 +41,18 @@
 			style="
                 top: {item.position.y}px;
                 left: {item.position.x}px;
-                outline: {item.held ? 'solid #1b9753 1px' : 'none'}
+                outline-width: {item.held ? '1px' : '0'}
             "
 			on:mousedown={() => (item.held = true)}
 			on:mouseup={() => (item.held = false)}
 			on:mouseleave={() => (item.held = false)}
-			on:mouseout={() => (item.held = false)}
-			on:blur={() => (item.held = false)}
 			on:dblclick={() => duplicate_item(items, item)}
 		>
-			<span>{item.icon}</span>{item.name}
+			{#if item.status == 'merge'}
+				<span>🔄</span> loading...
+			{:else}
+				<span>{item.icon}</span>{item.name}
+			{/if}
 		</div>
 	{/each}
 </main>
@@ -80,6 +82,9 @@
 		align-items: center;
 		transform: translate(-50%, -50%) translateZ(0);
 		transition: top left 100ms linear;
+		outline-style: solid;
+		outline-color: #1b9753;
+		outline-width: 0;
 	}
 	.item span {
 		font-size: 24px;
