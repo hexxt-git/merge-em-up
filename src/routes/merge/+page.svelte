@@ -150,6 +150,11 @@
 		font-family: sans-serif;
 		color: #222;
 	}
+	@media (max-aspect-ratio: 1/1){
+		form span{
+			display: none;
+		}
+	}
 	input {
 		border: none;
 		background: transparent;

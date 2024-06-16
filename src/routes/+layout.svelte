@@ -21,6 +21,8 @@
 		font-family:
 			Libre Baskerville,
 			serif;
+		height: 100vh;
+		overflow: hidden;
 	}
 	:global(*)::selection{
 		background-color: #6baff0;
