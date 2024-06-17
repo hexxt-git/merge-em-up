@@ -33,8 +33,8 @@ export function vectorNormalize(v: Vector2) {
 }
 
 export interface Item {
-	name: string;
-	icon: string;
+	word: string;
+	emoji: string;
 	position: Vector2;
 	id: number;
 	held: boolean;

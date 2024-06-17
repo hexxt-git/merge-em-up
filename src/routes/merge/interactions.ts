@@ -9,11 +9,11 @@ import {
 } from '$lib/types';
 import type { Writable } from 'svelte/store';
 
-const merge_queue: Map<number, { icon: string; name: string }> = new Map();
+const merge_queue: Map<number, { emoji: string; word: string }> = new Map();
 
-async function merge(name1: string, name2: string, id: number) {
-	const res = await fetch(`/api/merge?name1=${name1}&name2=${name2}`);
-	const data: { name: string; icon: string } = await res.json();
+async function merge(word1: string, word2: string, id: number) {
+	const res = await fetch(`/api/merge?word1=${word1}&word2=${word2}`);
+	const data: { word: string; emoji: string } = await res.json();
 	merge_queue.set(id, data);
 }
 
@@ -22,8 +22,8 @@ function update(items: Item[]) {
 		if (merge_queue.has(item.id)) {
 			const mergeItem = merge_queue.get(item.id)!;
 			item.status = 'free';
-			item.name = mergeItem.name;
-			item.icon = mergeItem.icon;
+			item.word = mergeItem.word;
+			item.emoji = mergeItem.emoji;
 			merge_queue.delete(item.id);
 		}
 	});
@@ -54,14 +54,14 @@ function update(items: Item[]) {
 			if (
 				dist < 20 &&
 				// HACK so it doesnt merge when duplicating
-				item.name != other.name &&
+				item.word != other.word &&
 				other.status != 'merge' &&
 				item.status != 'merge' &&
 				!other.held
 			) {
 				item.status = 'delete';
 				other.status = 'merge';
-				merge(item.name, other.name, other.id);
+				merge(item.word, other.word, other.id);
 			}
 		});
 	});

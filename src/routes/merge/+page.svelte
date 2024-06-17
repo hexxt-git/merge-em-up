@@ -8,8 +8,8 @@
 	if (typeof window != 'undefined') {
 		items.set([
 			{
-				name: 'rock',
-				icon: '🪨',
+				word: 'earth',
+				emoji: '🪨',
 				position: {
 					x: window.innerWidth / 2 + Math.random() * 600 - 300,
 					y: window.innerHeight / 2 + Math.random() * 600 - 300,
@@ -19,8 +19,8 @@
 				id: Math.random(),
 			},
 			{
-				name: 'fire',
-				icon: '🔥',
+				word: 'wind',
+				emoji: '🍃',
 				position: {
 					x: window.innerWidth / 2 + Math.random() * 600 - 300,
 					y: window.innerHeight / 2 + Math.random() * 600 - 300,
@@ -30,8 +30,19 @@
 				id: Math.random(),
 			},
 			{
-				name: 'water',
-				icon: '🌊',
+				word: 'fire',
+				emoji: '🔥',
+				position: {
+					x: window.innerWidth / 2 + Math.random() * 600 - 300,
+					y: window.innerHeight / 2 + Math.random() * 600 - 300,
+				},
+				held: false,
+				status: 'free',
+				id: Math.random(),
+			},
+			{
+				word: 'water',
+				emoji: '🌊',
 				position: {
 					x: window.innerWidth / 2 + Math.random() * 600 - 300,
 					y: window.innerHeight / 2 + Math.random() * 600 - 300,
@@ -68,12 +79,12 @@
 			if (processing) return;
 			processing = true;
 			let word = textInput.value;
+			let emoji = '';
 			let emoji_res = await fetch(`/api/emoji?word=${word}`);
-			let emoji_data = await emoji_res.json();
-			let emoji = emoji_data.emoji;
+			if (emoji_res.status == 200) emoji = await emoji_res.text();
 			$items.push({
-				name: word,
-				icon: emoji,
+				word: word,
+				emoji: emoji,
 				position: {
 					x: window.innerWidth / 2 + Math.random() * 600 - 300,
 					y: window.innerHeight / 2 + Math.random() * 600 - 300,
@@ -109,11 +120,11 @@
 			on:touchstart={() => (item.held = true)}
 			on:touchend={() => (item.held = false)}
 			on:dblclick={() => duplicate_item(items, item)}
-			>
+		>
 			{#if item.status == 'merge'}
 				<span>🔄</span> loading...
 			{:else}
-				<span>{item.icon}</span>{item.name}
+				<span>{item.emoji}</span>{item.word}
 			{/if}
 		</div>
 	{/each}
@@ -140,6 +151,7 @@
 		align-items: center;
 		justify-content: space-between;
 		padding-right: 15px;
+		user-select: none;
 	}
 	form span {
 		background-color: #f3f3f3;
@@ -150,8 +162,8 @@
 		font-family: sans-serif;
 		color: #222;
 	}
-	@media (max-aspect-ratio: 1/1){
-		form span{
+	@media (max-aspect-ratio: 3/4) {
+		form span {
 			display: none;
 		}
 	}
