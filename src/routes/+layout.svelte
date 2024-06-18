@@ -14,7 +14,6 @@
 
 <Background />
 <slot />
-<Help />
 
 <style>
 	:global(body) {

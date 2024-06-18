@@ -1,133 +1,50 @@
 <script lang="ts">
-	import { writable, type Writable } from 'svelte/store';
-	import type { Item } from '$lib/types';
-	import { initSimulation, duplicate_item } from './interactions';
+	import {
+		initSimulation,
+		mouseUp,
+		mouseDown,
+		mouseDBClick,
+	} from './interactions';
+	import { items } from './itemState';
+	import CheatBar from '$lib/CheatBar.svelte';
+	import Help from '$lib/Help.svelte';
 	import { onMount } from 'svelte';
-
-	let items: Writable<Item[]> = writable([]);
-	if (typeof window != 'undefined') {
-		items.set([
-			{
-				word: 'earth',
-				emoji: '🪨',
-				position: {
-					x: window.innerWidth / 2 + Math.random() * 600 - 300,
-					y: window.innerHeight / 2 + Math.random() * 600 - 300,
-				},
-				held: false,
-				status: 'free',
-				id: Math.random(),
-			},
-			{
-				word: 'wind',
-				emoji: '🍃',
-				position: {
-					x: window.innerWidth / 2 + Math.random() * 600 - 300,
-					y: window.innerHeight / 2 + Math.random() * 600 - 300,
-				},
-				held: false,
-				status: 'free',
-				id: Math.random(),
-			},
-			{
-				word: 'fire',
-				emoji: '🔥',
-				position: {
-					x: window.innerWidth / 2 + Math.random() * 600 - 300,
-					y: window.innerHeight / 2 + Math.random() * 600 - 300,
-				},
-				held: false,
-				status: 'free',
-				id: Math.random(),
-			},
-			{
-				word: 'water',
-				emoji: '🌊',
-				position: {
-					x: window.innerWidth / 2 + Math.random() * 600 - 300,
-					y: window.innerHeight / 2 + Math.random() * 600 - 300,
-				},
-				held: false,
-				status: 'free',
-				id: Math.random(),
-			},
-		]);
-	}
-
-	initSimulation(items);
-	let processing = false;
-
-	let textInput: HTMLInputElement;
-	function handleKeydown(event: KeyboardEvent) {
-		if (event.code === 'KeyK' && event.ctrlKey) {
-			event.preventDefault();
-			textInput.focus();
-		}
-	}
+	let show_help = false;
+	let show_menu = false;
+	let container: HTMLElement;
+	import ItemDiv from '$lib/ItemDiv.svelte';
 
 	onMount(() => {
-		window.addEventListener('keydown', handleKeydown);
-		return () => {
-			window.removeEventListener('keydown', handleKeydown);
-		};
+		initSimulation(items, container);
 	});
 </script>
 
-<main>
-	<form
-		on:submit={async () => {
-			if (processing) return;
-			processing = true;
-			let word = textInput.value;
-			let emoji = '';
-			let emoji_res = await fetch(`/api/emoji?word=${word}`);
-			if (emoji_res.status == 200) emoji = await emoji_res.text();
-			$items.push({
-				word: word,
-				emoji: emoji,
-				position: {
-					x: window.innerWidth / 2 + Math.random() * 600 - 300,
-					y: window.innerHeight / 2 + Math.random() * 600 - 300,
-				},
-				held: false,
-				status: 'free',
-				id: Math.random(),
-			});
-			if (textInput.value == word) textInput.value = '';
-			processing = false;
-		}}
-	>
-		<input type="text" placeholder="add a new item" bind:this={textInput} />
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		{#if textInput?.value?.length > 0}
-			<span>Enter</span>
-		{:else}
-			<span on:click={() => textInput.focus()}>ctrl + k</span>
-		{/if}
-	</form>
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<main
+	bind:this={container}
+	on:mousedown={(e) => mouseDown(items, e)}
+	on:mouseup={(e) => mouseUp(items)}
+	on:touchstart={(e) => mouseDown(items, e)}
+	on:touchend={(e) => mouseUp(items)}
+	on:mouseleave={(e) => mouseUp(items)}
+	on:dblclick={(e) => mouseDBClick(items, e)}
+>
+	<CheatBar />
+
 	{#each $items as item (item.id)}
-		<!-- svelte-ignore a11y-no-static-element-interactions -->
-		<div
-			class="item"
-			style="
-                top: {item.position.y}px;
-                left: {item.position.x}px;
-                outline-width: {item.held ? '1px' : '0'}
-            "
-			on:mousedown={() => (item.held = true)}
-			on:mouseup={() => (item.held = false)}
-			on:touchstart={() => (item.held = true)}
-			on:touchend={() => (item.held = false)}
-			on:dblclick={() => duplicate_item(items, item)}
-		>
-			{#if item.status == 'merge'}
-				<span>🔄</span> loading...
-			{:else}
-				<span>{item.emoji}</span>{item.word}
-			{/if}
-		</div>
+		<ItemDiv {item} />
 	{/each}
+
+	<div class="buttons">
+		<button on:click={() => (show_help = !show_help)}>?</button>
+		<button on:click={() => (show_menu = !show_menu)}>=</button>
+	</div>
+	<div class="overlays">
+		{#if show_help}
+			<Help />
+		{/if}
+	</div>
 </main>
 
 <style>
@@ -137,72 +54,36 @@
 		position: relative;
 		overflow: hidden;
 	}
-	form {
+	.buttons {
 		position: absolute;
-		top: 0;
-		left: 0;
+		bottom: 0;
 		right: 0;
-		margin: 20px auto;
-		width: 400px;
-		max-width: 60vw;
-		border: solid 1px #555;
-		border-radius: 100px;
+		padding: 20px;
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding-right: 15px;
+		gap: 10px;
 		user-select: none;
 	}
-	form span {
-		background-color: #f3f3f3;
-		border-radius: 7px;
-		padding: 3px 10px;
-		cursor: pointer;
-		user-select: none;
+	.buttons button {
+		width: 40px;
+		height: 40px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background-color: #fffe;
+		border-radius: 100%;
+		border: solid #222 1px;
 		font-family: sans-serif;
-		color: #222;
-	}
-	@media (max-aspect-ratio: 3/4) {
-		form span {
-			display: none;
-		}
-	}
-	input {
-		border: none;
-		background: transparent;
-		padding: 10px 25px;
 		font-size: 20px;
+		font-weight: 300;
+		cursor: pointer;
 	}
-	input:focus {
-		outline: none;
-	}
-	.item {
-		position: absolute;
-		background-color: #fff9;
-		color: #222;
-		/* HACK for some reason bluring the backdrop makes the whole element mushy */
-		/* backdrop-filter: blur(3px); */
-		padding: 15px 40px 15px 30px;
-		border: solid #888 1px;
-		border-radius: 200px;
-		user-select: none;
-		cursor: grab;
-		font-size: 18px;
-		font-weight: bolder;
-		letter-spacing: 1px;
+	.overlays {
+		width: 100%;
+		height: 100%;
+		position: relative;
 		display: flex;
-		gap: 15px;
+		justify-content: center;
 		align-items: center;
-		transform: translate(-50%, -50%) translateZ(0);
-		outline-style: solid;
-		outline-color: #1b9753;
-		outline-width: 0;
-	}
-	.item span {
-		font-size: 24px;
-		transition: all 200ms ease-out;
-	}
-	.item:hover span {
-		font-size: 34px;
+		pointer-events: none;
 	}
 </style>

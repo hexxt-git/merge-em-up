@@ -12,9 +12,14 @@ import type { Writable } from 'svelte/store';
 const merge_queue: Map<number, { emoji: string; word: string }> = new Map();
 
 async function merge(word1: string, word2: string, id: number) {
-	const res = await fetch(`/api/merge?word1=${word1}&word2=${word2}`);
-	const data: { word: string; emoji: string } = await res.json();
-	merge_queue.set(id, data);
+	try {
+		const res = await fetch(`/api/merge?word1=${word1}&word2=${word2}`);
+		const data: { word: string; emoji: string } = await res.json();
+		merge_queue.set(id, data);
+	} catch (error) {
+		console.error('Error in merge:', error);
+		merge_queue.set(id, { word: word1, emoji: '⛔' });
+	}
 }
 
 function update(items: Item[]) {
@@ -29,14 +34,6 @@ function update(items: Item[]) {
 	});
 
 	items.forEach((item: Item) => {
-		item.position.x = Math.max(
-			60,
-			Math.min(item.position.x, window.innerWidth - 60)
-		);
-		item.position.y = Math.max(
-			20,
-			Math.min(item.position.y, window.innerHeight - 20)
-		);
 		if (item.held || item.status == 'delete') return;
 		items.forEach((other) => {
 			if (item.id == other.id || other.status == 'delete') return;
@@ -76,8 +73,49 @@ function update_loop(items: Writable<Item[]>) {
 		items.update(update);
 	}, 1000 / 60);
 }
+export const mouseDown = (
+	items: Writable<Item[]>,
+	e: MouseEvent | TouchEvent
+) => {
+	items.update((items) =>
+		items.map((item) => {
+			const target = e.target as HTMLElement;
+			if (target && target.dataset)
+				if (Number(target.dataset.id) == item.id) item.held = true;
+				else item.held = false;
+			return item;
+		})
+	);
+};
+export const mouseUp = (items: Writable<Item[]>) => {
+	items.update((items) =>
+		items.map((item) => {
+			item.held = false;
+			return item;
+		})
+	);
+};
+export const mouseDBClick = (items: Writable<Item[]>, e: MouseEvent) => {
+	items.update((items) => {
+		const item = items.find(
+			(item) => Number((e.target as HTMLElement).dataset.id) === item.id
+		);
+		if (item) return [...items, duplicate_item(item)];
+		else return items;
+	});
+};
 
-function mouse_interactions(items: Writable<Item[]>) {
+export function duplicate_item(item: Item) {
+	if (item.status != 'free') return;
+	const newItem = JSON.parse(JSON.stringify(item));
+	newItem.id = Math.random();
+	newItem.position.x += Math.random() * 20 - 10;
+	newItem.position.y += Math.random() * 20 - 10;
+
+	return newItem;
+}
+
+function mouse_interactions(items: Writable<Item[]>, container: HTMLElement) {
 	const handle_mousemove = (e: MouseEvent) => {
 		items.update((items) => {
 			items.forEach((item) => {
@@ -88,8 +126,8 @@ function mouse_interactions(items: Writable<Item[]>) {
 			return items;
 		});
 	};
-	if (typeof window != 'undefined') {
-		window.addEventListener('mousemove', handle_mousemove);
+	if (typeof container != 'undefined') {
+		container.addEventListener('mousemove', handle_mousemove);
 	}
 
 	const handle_touchmove = (e: TouchEvent) => {
@@ -104,23 +142,16 @@ function mouse_interactions(items: Writable<Item[]>) {
 		});
 	};
 
-	if (typeof window != 'undefined') {
-		window.addEventListener('touchmove', handle_touchmove);
+	if (typeof container != 'undefined') {
+		container.addEventListener('touchmove', handle_touchmove);
 	}
 }
 
-export function initSimulation(items: Writable<Item[]>) {
+export function initSimulation(
+	items: Writable<Item[]>,
+	container: HTMLElement
+) {
 	if (typeof window == 'undefined') return;
-	mouse_interactions(items);
+	mouse_interactions(items, container);
 	update_loop(items);
-}
-
-export function duplicate_item(items: Writable<Item[]>, item: Item) {
-	if (item.status != 'free') return;
-	const newItem = JSON.parse(JSON.stringify(item));
-	newItem.id = Math.random();
-	newItem.position.x += Math.random();
-	newItem.position.y += Math.random();
-
-	items.update((items) => [...items, newItem]);
 }
