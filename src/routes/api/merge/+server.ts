@@ -117,3 +117,8 @@ export async function GET({ url }) {
 		headers: { 'Content-Type': 'application/json' },
 	});
 }
+
+_db_connection.execute({
+	sql: `delete from words where word1 like "%quick%" or solution like "_quicksand_";`,
+	args: [],
+})

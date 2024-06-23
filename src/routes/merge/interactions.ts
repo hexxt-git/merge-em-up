@@ -10,6 +10,7 @@ import {
 import type { Writable } from 'svelte/store';
 
 const merge_queue: Map<number, { emoji: string; word: string }> = new Map();
+const duplicate_cooldown: Set<number> = new Set();
 
 async function merge(word1: string, word2: string, id: number) {
 	try {
@@ -29,6 +30,7 @@ function update(items: Item[]) {
 			item.status = 'free';
 			item.word = mergeItem.word;
 			item.emoji = mergeItem.emoji;
+			item.id = Math.random();
 			merge_queue.delete(item.id);
 		}
 	});
@@ -40,20 +42,21 @@ function update(items: Item[]) {
 			const dif: Vector2 = vectorSubtract(item.position, other.position);
 			const dir: Vector2 = vectorNormalize(dif);
 			const dist: number = vectorMagnitude(dif);
-			let force: number = 100 / (dist ** 1.2 + 20);
+			let force: number = 100 / (dist ** 1.3 + 20);
 			if (other.held) {
 				force = -150 / (dist + 70);
-			} else if (dist > 400) force = 0;
+			} else if (dist > 300) force = 0;
 			item.position = vectorAdd(
 				item.position,
 				vectorMultiply(dir, force)
 			);
 			if (
 				dist < 20 &&
-				// HACK so it doesnt merge when duplicating
-				item.word != other.word &&
+				// item.word != other.word &&
 				other.status != 'merge' &&
 				item.status != 'merge' &&
+				!duplicate_cooldown.has(item.id) &&
+				!duplicate_cooldown.has(other.id) &&
 				!other.held
 			) {
 				item.status = 'delete';
@@ -111,6 +114,12 @@ export function duplicate_item(item: Item) {
 	newItem.id = Math.random();
 	newItem.position.x += Math.random() * 20 - 10;
 	newItem.position.y += Math.random() * 20 - 10;
+	duplicate_cooldown.add(item.id);
+	duplicate_cooldown.add(newItem.id);
+	setTimeout(() => {
+		duplicate_cooldown.delete(item.id);
+		duplicate_cooldown.delete(newItem.id);
+	}, 1000);
 
 	return newItem;
 }
@@ -154,4 +163,27 @@ export function initSimulation(
 	if (typeof window == 'undefined') return;
 	mouse_interactions(items, container);
 	update_loop(items);
+}
+
+export async function insertItem(
+	items: Writable<Item[]>,
+	word: string,
+	emoji: string
+) {
+	const newItem: Item = {
+		id: Math.random(),
+		word: word,
+		emoji: emoji,
+		position: {
+			x: Math.random() * window.innerWidth,
+			y: Math.random() * window.innerHeight,
+		},
+		status: 'free',
+		held: false,
+	};
+	setTimeout(() => {
+		duplicate_cooldown.delete(newItem.id);
+	}, 3000);
+
+	items.update((items) => [...items, newItem]);
 }

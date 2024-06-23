@@ -4,8 +4,8 @@
 		mouseUp,
 		mouseDown,
 		mouseDBClick,
+		insertItem,
 	} from './interactions';
-	import { items } from './itemState';
 	import CheatBar from '$lib/CheatBar.svelte';
 	import Help from '$lib/Help.svelte';
 	import { onMount } from 'svelte';
@@ -13,6 +13,18 @@
 	let show_menu = false;
 	let container: HTMLElement;
 	import ItemDiv from '$lib/ItemDiv.svelte';
+
+	import { writable, type Writable } from 'svelte/store';
+	import type { Item } from '$lib/types';
+
+	const items: Writable<Item[]> = writable([]);
+
+	if (typeof window != 'undefined') {
+		insertItem(items, 'water', '💧');
+		insertItem(items, 'fire', '🔥');
+		insertItem(items, 'earth', '🌍');
+		insertItem(items, 'air', '💨');
+	}
 
 	onMount(() => {
 		initSimulation(items, container);
@@ -30,7 +42,7 @@
 	on:mouseleave={(e) => mouseUp(items)}
 	on:dblclick={(e) => mouseDBClick(items, e)}
 >
-	<CheatBar />
+	<CheatBar {items} />
 
 	{#each $items as item (item.id)}
 		<ItemDiv {item} />
