@@ -40,3 +40,8 @@ export interface Item {
 	held: boolean;
 	status: 'free'|'merge'|'delete';
 }
+
+export interface Entry {
+	word: string;
+	emoji: string;
+}

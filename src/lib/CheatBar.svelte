@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { writable, type Writable } from 'svelte/store';
-	import type { Item } from './types';
+	import type { Item, Entry } from './types';
 	import { insertItem } from '../routes/merge/interactions';
 	export let items: Writable<Item[]> = writable([]);
+	export let history: Writable<Entry[]> = writable([]);
 
 	let processing = false;
 	let textInput: HTMLInputElement;
@@ -34,7 +35,7 @@
 		let emoji = '';
 		let emoji_res = await fetch(`/api/emoji?word=${word}`);
 		if (emoji_res.status == 200) emoji = await emoji_res.text();
-		insertItem(items, word, emoji);
+		insertItem(items, history, word, emoji);
 		if (textInput.value == word) textInput.value = '';
 		processing = false;
 	};
@@ -65,6 +66,7 @@
 		justify-content: space-between;
 		padding-right: 15px;
 		user-select: none;
+		backdrop-filter: blur(3px);
 	}
 	form button {
 		background-color: #f3f3f3;

@@ -5,6 +5,7 @@ import {
 	vectorMagnitude,
 	vectorNormalize,
 	type Item,
+	type Entry,
 	type Vector2,
 } from '$lib/types';
 import type { Writable } from 'svelte/store';
@@ -23,7 +24,11 @@ async function merge(word1: string, word2: string, id: number) {
 	}
 }
 
-function update(items: Item[]) {
+function update(
+	items: Item[],
+	history: Writable<Entry[]>,
+	container: HTMLElement
+) {
 	items.forEach((item) => {
 		if (merge_queue.has(item.id)) {
 			const mergeItem = merge_queue.get(item.id)!;
@@ -32,6 +37,11 @@ function update(items: Item[]) {
 			item.emoji = mergeItem.emoji;
 			item.id = Math.random();
 			merge_queue.delete(item.id);
+
+			history.update((history) => {
+				if (history.some((entry) => entry.word == item.word)) return history;
+				return [...history, { word: item.word, emoji: item.emoji }];
+			});
 		}
 	});
 
@@ -51,7 +61,7 @@ function update(items: Item[]) {
 				vectorMultiply(dir, force)
 			);
 			if (
-				dist < 20 &&
+				dist < 40 &&
 				// item.word != other.word &&
 				other.status != 'merge' &&
 				item.status != 'merge' &&
@@ -64,6 +74,14 @@ function update(items: Item[]) {
 				merge(item.word, other.word, other.id);
 			}
 		});
+		const padding = 80;
+		if (!container) return;
+		if (item.position.x < padding) item.position.x = padding;
+		if (item.position.y < padding) item.position.y = padding / 2;
+		if (item.position.x > container.clientWidth - padding)
+			item.position.x = container.clientWidth - padding;
+		if (item.position.y > container.clientHeight - padding / 2)
+			item.position.y = container.clientHeight - padding / 2;
 	});
 	items.sort((a, b) => Number(a.held) - Number(b.held));
 	items = items.filter((item) => item.status !== 'delete');
@@ -71,10 +89,13 @@ function update(items: Item[]) {
 	return items;
 }
 
-function update_loop(items: Writable<Item[]>) {
-	setInterval(() => {
-		items.update(update);
-	}, 1000 / 60);
+function update_loop(
+	items: Writable<Item[]>,
+	history: Writable<Entry[]>,
+	container: HTMLElement
+) {
+	items.update((items) => update(items, history, container));
+	requestAnimationFrame(() => update_loop(items, history, container));
 }
 export const mouseDown = (
 	items: Writable<Item[]>,
@@ -125,13 +146,17 @@ export function duplicate_item(item: Item) {
 }
 
 function mouse_interactions(items: Writable<Item[]>, container: HTMLElement) {
+	const move_item = (item: Item, x: number, y: number) => {
+		item.position.x = x;
+		item.position.y = y;
+	};
 	const handle_mousemove = (e: MouseEvent) => {
 		items.update((items) => {
-			items.forEach((item) => {
-				if (!item.held) return;
-				item.position.x = e.clientX;
-				item.position.y = e.clientY;
-			});
+			items
+				.filter((item) => item.held)
+				.forEach((item) => {
+					move_item(item, e.clientX, e.clientY);
+				});
 			return items;
 		});
 	};
@@ -141,12 +166,12 @@ function mouse_interactions(items: Writable<Item[]>, container: HTMLElement) {
 
 	const handle_touchmove = (e: TouchEvent) => {
 		items.update((items) => {
-			items.forEach((item) => {
-				if (!item.held) return;
-				let touch = e.changedTouches[0];
-				item.position.x = touch.clientX;
-				item.position.y = touch.clientY;
-			});
+			items
+				.filter((item) => item.held)
+				.forEach((item) => {
+					let touch = e.changedTouches[0];
+					move_item(item, touch.clientX, touch.clientY);
+				});
 			return items;
 		});
 	};
@@ -158,18 +183,22 @@ function mouse_interactions(items: Writable<Item[]>, container: HTMLElement) {
 
 export function initSimulation(
 	items: Writable<Item[]>,
+	history: Writable<Entry[]>,
 	container: HTMLElement
 ) {
 	if (typeof window == 'undefined') return;
 	mouse_interactions(items, container);
-	update_loop(items);
+	update_loop(items, history, container);
 }
 
 export async function insertItem(
 	items: Writable<Item[]>,
+	history: Writable<Entry[]>,
 	word: string,
 	emoji: string
 ) {
+	if (items == undefined) return;
+	if (typeof window == 'undefined') return;
 	const newItem: Item = {
 		id: Math.random(),
 		word: word,
@@ -186,4 +215,8 @@ export async function insertItem(
 	}, 3000);
 
 	items.update((items) => [...items, newItem]);
+	history.update((history) => {
+		if (history.some((entry) => entry.word == word)) return history;
+		return [...history, { word, emoji }];
+	});
 }
